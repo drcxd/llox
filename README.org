@@ -1,0 +1,12 @@
+This is an implementation of the =jlox= interpreter in [[https://craftinginterpreters.com/][Crafting
+Interpreters]] in Lua.
+
+* Why Lua
+
+=jlox= is implemented in Java. However, my development environment is
+not friendly to Java development, and I do not like the language too
+much. I would like to implement in C++, however, C++ lacks some key
+features Java provided, such as a garbage collector. Thus, I decide to
+use Lua as the implementing language, since I am familiar with it, and
+I already have a comfortable development environment for it, and it is
+similar to Java -- it has a garbage collector.
