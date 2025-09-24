@@ -1,6 +1,12 @@
---
+local Scanner = require("Scanner")
+
 local run = function (code)
-   print(code)
+   local scanner = Scanner.new(code)
+   local tokens = scanner:scanTokens()
+
+   for _, token in ipairs(tokens) do
+      print(token)
+   end
 end
 
 local runFile = function (path)
