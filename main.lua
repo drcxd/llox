@@ -1,8 +1,7 @@
 local Scanner = require("Scanner")
 
 local run = function (code)
-   local scanner = Scanner.new(code)
-   local tokens = scanner:scanTokens()
+   local tokens = Scanner.scanTokens(code)
 
    for _, token in ipairs(tokens) do
       print(token)
