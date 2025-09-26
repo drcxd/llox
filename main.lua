@@ -1,5 +1,7 @@
 local Scanner = require("Scanner")
+local Error = require("Error")
 
+--- @param code string
 local run = function (code)
    local tokens = Scanner.scanTokens(code)
 
@@ -8,9 +10,15 @@ local run = function (code)
    end
 end
 
+--- @param path string
 local runFile = function (path)
    local code = io.open(path, "r"):read("a")
    run(code)
+
+   -- Indicate an error in the exit code
+   if Error.hadError then
+      os.exit(65)
+   end
 end
 
 local runPrompt = function ()
@@ -22,6 +30,7 @@ local runPrompt = function ()
          break
       end
       run(line)
+      Error.hadError = false
    end
 end
 
