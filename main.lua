@@ -3,7 +3,8 @@ local Error = require("Error")
 
 --- @param code string
 local run = function (code)
-   local tokens = Scanner.scanTokens(code)
+   local scanner = Scanner.new(code)
+   local tokens = scanner:scanTokens()
 
    for _, token in ipairs(tokens) do
       print(token)

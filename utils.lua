@@ -13,4 +13,17 @@ utils.GenerateNextEnumValue = function (enum)
    return newValue
 end
 
+--- @param value number
+--- @param enum table
+utils.EnumValueToName = function (value, enum)
+   local name
+   for k, v in pairs(enum) do
+      if value == v then
+         name = k
+         break
+      end
+   end
+   return name
+end
+
 return utils
