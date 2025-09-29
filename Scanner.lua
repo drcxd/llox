@@ -1,5 +1,6 @@
 local TokenType = require("TokenType")
 local Token = require("Token")
+local Error = require("Error")
 
 --- @class Scanner
 --- @field source string
@@ -17,8 +18,8 @@ Scanner.new = function (code)
    local o = {
       source = code,
       tokens = {},
-      start = 0,
-      current = 0,
+      start = 1,
+      current = 1,
       line = 1,
    }
    setmetatable(o, Scanner)
@@ -42,7 +43,7 @@ function Scanner:isAtEnd()
 end
 
 --- @type table<string, TokenType>
-local charToTokenType = {
+local oneCharToken = {
    ["("] = TokenType.LEFT_PAREN,
    [")"] = TokenType.RIGHT_PAREN,
    ["{"] = TokenType.LEFT_BRACE,
@@ -55,17 +56,52 @@ local charToTokenType = {
    ["*"] = TokenType.STAR,
 }
 
+local oneOrTwoCharToken =
+   {
+      ["!"] = { "=", TokenType.BANG_EQUAL, TokenType.BANG },
+      ["="] = { "=", TokenType.EQUAL_EQUAL, TokenType.EQUAL },
+      ["<"] = { "=", TokenType.LESS_EQUAL, TokenType.LESS },
+      [">"] = { "=", TokenType.GREATER_EQUAL, TokenType.GREATER },
+   }
+
+local whiteSpaces =
+   {
+      [" "] = 1,
+      ["\r"] = 1,
+      ["\t"] = 1,
+      ["\n"] = 1,
+   }
+
 function Scanner:scanToken()
    local c = self:advance()
-   local tokenType = charToTokenType[c]
-   if tokenType then
-      self:addToken(tokenType)
+   if oneCharToken[c] then
+      self:addToken(oneCharToken[c])
+   elseif oneOrTwoCharToken[c] then
+      local auxData = oneOrTwoCharToken[c]
+      local nextChar = auxData[1]
+      local twoCharsTokenType = auxData[2]
+      local oneCharTokenType = auxData[3]
+      self:addToken(self:match(nextChar) and twoCharsTokenType or oneCharTokenType)
+   elseif c == "/" then
+      if self:match("/") then
+         while (self:peek() ~= "\n" and not self:isAtEnd()) do
+            self:advance()
+         end
+      else
+         self:addToken(TokenType.SLASH)
+      end
+   elseif whiteSpaces[c] then
+      if whiteSpaces[c] == "\n" then
+         self.line = self.line + 1
+      end
+   else
+      Error.error(self.line, "Unexpected character.")
    end
 end
 
 --- @return string
 function Scanner:advance()
-   local ret = self.source[self.current]
+   local ret = self.source:sub(self.current, self.current)
    self.current = self.current + 1
    return ret
 end
@@ -75,6 +111,27 @@ end
 function Scanner:addToken(type, literal)
    local text = string.sub(self.source, self.start, self.current)
    table.insert(self.tokens, Token.new(type, text, literal, self.line))
+end
+
+--- @param expected string
+--- @return boolean
+function Scanner:match(expected)
+   if self:isAtEnd() then
+      return false
+   end
+   if self.source:sub(self.current, self.current) ~= expected then
+      return false
+   end
+   self.current = self.current + 1
+   return true
+end
+
+--- @return string
+function Scanner:peek()
+   if (self:isAtEnd()) then
+      return ""
+   end
+   return self.source:sub(self.current, self.current)
 end
 
 return Scanner
