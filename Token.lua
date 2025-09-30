@@ -4,9 +4,10 @@ local utils = require("utils")
 --- @class Token
 --- @field type TokenType
 --- @field lexeme string
---- @field literal table
+--- @field literal table?
 --- @field line number
 local Token = {}
+Token.__index = Token
 
 --- @param type TokenType
 --- @param lexeme string
@@ -14,20 +15,22 @@ local Token = {}
 --- @param line number
 --- @return Token
 Token.new = function (type, lexeme, literal, line)
-   return {
+   --- @type Token
+   local o = {
       type = type,
       lexeme = lexeme,
       literal = literal,
       line = line,
    }
+   setmetatable(o, Token)
+   return o
 end
 
---- @param token Token
-Token.toString = function (token)
-   return string.format("%s %s %s",
-                        utils.EnumValueToName(token.type, TokenType),
-                        token.lexeme,
-                        token.literal)
+function Token:toString()
+   return string.format("Type: %s Lexeme: %s Literal: %s",
+                        utils.EnumValueToName(self.type, TokenType),
+                        self.lexeme,
+                        self.literal)
 end
 
 return Token

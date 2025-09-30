@@ -7,7 +7,7 @@ local run = function (code)
    local tokens = scanner:scanTokens()
 
    for _, token in ipairs(tokens) do
-      print(token)
+      print(token:toString())
    end
 end
 

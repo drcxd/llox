@@ -136,7 +136,7 @@ end
 
 --- @param type TokenType
 function Scanner:addToken(type, literal)
-   local text = string.sub(self.source, self.start, self.current)
+   local text = string.sub(self.source, self.start, self.current - 1)
    table.insert(self.tokens, Token.new(type, text, literal, self.line))
 end
 
@@ -175,7 +175,7 @@ function Scanner:string()
 
    self:advance()
 
-   local value = self.source:sub(self.start + 1, self.current - 1)
+   local value = self.source:sub(self.start + 1, self.current - 2)
    self:addToken(TokenType.STRING, value)
 end
 
@@ -183,7 +183,10 @@ end
 --- @return boolean
 function Scanner:isDigit(char)
    local byte = string.byte(char)
-   return string.byte("0") <= byte or byte <= string.byte("9")
+   if byte then
+      return string.byte("0") <= byte and byte <= string.byte("9")
+   end
+   return false
 end
 
 function Scanner:number()
@@ -224,9 +227,12 @@ end
 --- @param char string
 function Scanner:isAlpha(char)
    local byte = string.byte(char)
-   return (string.byte("a") <= byte and byte <= string.byte("z")) or
-      (string.byte("A") <= byte and byte <= string.byte("Z")) or
-      byte == string.byte("_")
+   if byte then
+      return (string.byte("a") <= byte and byte <= string.byte("z")) or
+         (string.byte("A") <= byte and byte <= string.byte("Z")) or
+         byte == string.byte("_")
+   end
+   return false
 end
 
 --- @param char string
