@@ -2,6 +2,26 @@ local TokenType = require("TokenType")
 local Token = require("Token")
 local Error = require("Error")
 
+local keywords =
+   {
+      ["and"] = TokenType.AND,
+      ["class"] = TokenType.CLASS,
+      ["else"] = TokenType.ELSE,
+      ["false"] = TokenType.FALSE,
+      ["for"] = TokenType.FOR,
+      ["fun"] = TokenType.FUN,
+      ["if"] = TokenType.IF,
+      ["nil"] = TokenType.NIL,
+      ["or"] = TokenType.OR,
+      ["print"] = TokenType.PRINT,
+      ["return"] = TokenType.RETURN,
+      ["super"] = TokenType.SUPER,
+      ["this"] = TokenType.THIS,
+      ["true"] = TokenType.TRUE,
+      ["var"] = TokenType.VAR,
+      ["while"] = TokenType.WHILE,
+   }
+
 --- @class Scanner
 --- @field source string
 --- @field tokens Token[]
@@ -94,8 +114,16 @@ function Scanner:scanToken()
       if whiteSpaces[c] == "\n" then
          self.line = self.line + 1
       end
+   elseif c == '"' then
+      self:string()
    else
-      Error.error(self.line, "Unexpected character.")
+      if self:isDigit(c) then
+         self:number()
+      elseif self:isAlpha(c) then
+         self:identifier()
+      else
+         Error.error(self.line, "Unexpected character.")
+      end
    end
 end
 
@@ -107,7 +135,6 @@ function Scanner:advance()
 end
 
 --- @param type TokenType
---- @param literal table?
 function Scanner:addToken(type, literal)
    local text = string.sub(self.source, self.start, self.current)
    table.insert(self.tokens, Token.new(type, text, literal, self.line))
@@ -132,6 +159,79 @@ function Scanner:peek()
       return ""
    end
    return self.source:sub(self.current, self.current)
+end
+
+function Scanner:string()
+   while self:peek() ~= '"' and not self:isAtEnd() do
+      if self:peek() == "\n" then
+         self.line = self.line + 1
+      end
+      self:advance()
+   end
+   if self:isAtEnd() then
+      Error.error(self.line, "Unterminated string.")
+      return
+   end
+
+   self:advance()
+
+   local value = self.source:sub(self.start + 1, self.current - 1)
+   self:addToken(TokenType.STRING, value)
+end
+
+--- @param char string
+--- @return boolean
+function Scanner:isDigit(char)
+   local byte = string.byte(char)
+   return string.byte("0") <= byte or byte <= string.byte("9")
+end
+
+function Scanner:number()
+   while self:isDigit(self:peek()) do
+      self:advance()
+   end
+
+   -- Look for a fractional part.
+   if self:peek() == "." and self:isDigit(self:peekNext()) then
+      -- Consume the "."
+      self:advance()
+
+      while self:isDigit(self:peek()) do
+         self:advance()
+      end
+
+      self:addToken(TokenType.NUMBER, tonumber(self.source:sub(self.start, self.current)))
+   end
+end
+
+function Scanner:peekNext()
+   if self.current + 1 >= string.len(self.source) then
+      return ""
+   end
+   local idx = self.current + 1
+   return self.source:sub(idx, idx)
+end
+
+function Scanner:identifier()
+   while self:isAlphaNumeric(self:peek()) do
+      self:advance()
+   end
+   local text = self.source:sub(self.start, self.current)
+   local type = keywords[text] or TokenType.IDENTIFIER
+   self:addToken(type)
+end
+
+--- @param char string
+function Scanner:isAlpha(char)
+   local byte = string.byte(char)
+   return (string.byte("a") <= byte and byte <= string.byte("z")) or
+      (string.byte("A") <= byte and byte <= string.byte("Z")) or
+      byte == string.byte("_")
+end
+
+--- @param char string
+function Scanner:isAlphaNumeric(char)
+   return self:isAlpha(char) or self:isDigit(char)
 end
 
 return Scanner
